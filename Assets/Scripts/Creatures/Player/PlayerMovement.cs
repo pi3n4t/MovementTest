@@ -29,12 +29,17 @@ public class PlayerMovement : Creature
     {
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
+
+        isGrounded = GroundCheck();
+        Debug.Log(isGrounded);
+
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, transform.localScale.y / 2, transform.localScale.z / 2 - 0.01f);
+        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, 0.1f, Color.red);
     }
 
     private void FixedUpdate()
     {
-        isGrounded = GroundCheck();
-        Debug.Log(isGrounded);
+
         /*
         Vector2 inputDirection = (new Vector2(Input.GetAxisRaw(StringCollection.HORIZONTAL), Input.GetAxisRaw(StringCollection.VERTICAL))).normalized;
 
@@ -85,6 +90,6 @@ public class PlayerMovement : Creature
     private bool GroundCheck()
     {
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
-        return Physics.BoxCast(transform.localPosition, extents, Vector3.down, transform.rotation, (transform.localScale.y / 2) + 0.1f);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation);
     }
 }
