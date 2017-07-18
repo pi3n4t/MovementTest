@@ -10,7 +10,7 @@ public class CameraMovement : MonoBehaviour {
     float sensitivityY = 2;
     float horizontalRotation;
     float verticalRotation;
-    float yMin = 0;
+    float yMin = 15;
     float yMax = 80;
     float distanceFromTarget = 10;
     float rotationSmoothTime = 0.12f;
@@ -22,34 +22,38 @@ public class CameraMovement : MonoBehaviour {
     float currentX = 0;
     float currentY = 0;
 
+    float walkingRadius = 2.0f;
+
     private void Start()
     {
         playerObject = GameObject.FindGameObjectWithTag(StringCollection.PLAYER);
     }
-
+    
     private void Update()
     {
         float inputX = Input.GetAxis(StringCollection.HORIZONTAL);
-        float inputY = Input.GetAxis(StringCollection.VERTICAL);
 
 
 
         if (playerObject.transform != null)
         {
+            
             if (inputX != 0)
             {
-                currentX += inputX;
+                currentX += inputX * walkingRadius;
             }
+            
 
             currentX += Input.GetAxis(StringCollection.MOUSE_X) * sensitivityX;
-            currentX += Input.GetAxis(StringCollection.JOYSTICK_X) * sensitivityX;
+            //currentX += Input.GetAxis(StringCollection.JOYSTICK_X) * sensitivityX;
 
             currentY += Input.GetAxis(StringCollection.MOUSE_Y) * -sensitivityY;
-            currentY += Input.GetAxis(StringCollection.JOYSTICK_Y) * -sensitivityY;
+            //currentY += Input.GetAxis(StringCollection.JOYSTICK_Y) * -sensitivityY; Because Axis not setup yet
 
             currentY = Mathf.Clamp(currentY, yMin, yMax);
         }
     }
+    
 
     private void LateUpdate()
     {
@@ -67,13 +71,14 @@ public class CameraMovement : MonoBehaviour {
             transform.position = playerObject.transform.position - transform.forward * distanceFromTarget;
         }
         */
-
+        
         if (playerObject.transform != null)
         {
             Vector3 targetPosition = playerObject.transform.position + Quaternion.Euler(currentY, currentX, 0) * new Vector3(0, 0, -distanceFromTarget);
-            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, 0.1f);
+            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, 0.5f);
 
             transform.LookAt(playerObject.transform);
         }
+        
     }
 }

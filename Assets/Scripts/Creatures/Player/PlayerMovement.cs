@@ -17,6 +17,8 @@ public class PlayerMovement : Creature
     Rigidbody playerRigid;
     Transform cameraTransform;
 
+    private float rotationSpeed = 0.1f;
+
     private void Start()
     {
         playerRigid = gameObject.GetComponent<Rigidbody>();
@@ -32,6 +34,7 @@ public class PlayerMovement : Creature
     private void FixedUpdate()
     {
         isGrounded = GroundCheck();
+        Debug.Log(isGrounded);
         /*
         Vector2 inputDirection = (new Vector2(Input.GetAxisRaw(StringCollection.HORIZONTAL), Input.GetAxisRaw(StringCollection.VERTICAL))).normalized;
 
@@ -56,16 +59,16 @@ public class PlayerMovement : Creature
         Vector3 right = cameraTransform.right;
         forward.y = 0f;
 
-        Vector3 newDirection = (forward * Input.GetAxis(StringCollection.HORIZONTAL)) + (right * Input.GetAxis(StringCollection.VERTICAL));
+        Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
         newDirection.y = playerRigid.velocity.y;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
         if (movement.magnitude != 0)
-            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * speedSmoothTime);
+            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
 
-        playerRigid.AddForce((movement * movementSpeed) - playerRigid.velocity, ForceMode.Force);
+        playerRigid.AddForce((movement * movementSpeed) - playerRigid.velocity, ForceMode.VelocityChange);
     }
 
     private float GetModifiedSmoothTime(float smoothTime)
@@ -81,9 +84,7 @@ public class PlayerMovement : Creature
 
     private bool GroundCheck()
     {
-        if (true)
-            return true;
-
-        return false;
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
+        return Physics.BoxCast(transform.localPosition, extents, Vector3.down, transform.rotation, (transform.localScale.y / 2) + 0.1f);
     }
 }
