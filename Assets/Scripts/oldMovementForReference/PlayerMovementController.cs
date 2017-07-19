@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+/*
 public class PlayerMovementController : PlayerCommonController{
 
     PlayerMovementData movementData;
@@ -48,3 +48,4 @@ public class PlayerMovementController : PlayerCommonController{
       //return Physics.BoxCast(transform.localPosition, extents, Vector3.down, transform.rotation, (transform.localScale.y / 2) + movementData.GroundCheckSpacing);
     }
 }
+*/

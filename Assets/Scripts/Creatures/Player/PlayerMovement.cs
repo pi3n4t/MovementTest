@@ -2,7 +2,7 @@
 
 public class PlayerMovement : Creature
 {
-    private float movementSpeed = 50;
+    private float movementSpeed = 30; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move
     private float currentMovementSpeed;
     private float speedSmoothTime = 0.1f;
     private float turnSmoothTime = 0.1f;
@@ -17,8 +17,8 @@ public class PlayerMovement : Creature
     Rigidbody playerRigid;
     Transform cameraTransform;
 
-    private float rotationSpeed = 0.1f;
-    private float maxSpeed = 15;
+    private float rotationSpeed = 0.20f;
+    private float maxSpeed = 10;
 
     private void Start()
     {
@@ -72,17 +72,20 @@ public class PlayerMovement : Creature
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
         if (movement.magnitude != 0)
-            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
+            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z).normalized * rotationSpeed);
 
-        
 
+        playerRigid.AddForce(movement * movementSpeed, ForceMode.Acceleration);
+        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
+
+        /*
         playerRigid.AddForceAtPosition(movement * movementSpeed, transform.position, ForceMode.Force);
 
         if(playerRigid.velocity.magnitude > maxSpeed)
         {
             playerRigid.velocity = playerRigid.velocity.normalized * maxSpeed;
         }
-
+        */
     }
 
     private float GetModifiedSmoothTime(float smoothTime)

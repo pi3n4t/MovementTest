@@ -15,14 +15,14 @@ public class CameraMovement : MonoBehaviour {
     float distanceFromTarget = 10;
     float rotationSmoothTime = 0.12f;
     Vector3 currentRotation;
-    Vector3 rotationSmoothVelocity;
+    Vector3 rotationSmoothVelocity = Vector3.zero;
     GameObject playerObject;
 
 
     float currentX = 0;
     float currentY = 0;
 
-    float walkingRadius = 2.0f;
+    float walkingRadius = 0.5f;
 
     private void Start()
     {

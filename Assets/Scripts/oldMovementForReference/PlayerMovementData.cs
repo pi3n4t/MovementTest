@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMovementData : PlayerCommonData {
+public class PlayerMovementData {
 
     public float MovementSpeed { get { return 50; } }
 
@@ -13,8 +13,6 @@ public class PlayerMovementData : PlayerCommonData {
     public float Gravity { get { return 7.5f; } }
 
     public float VerticalVelocity { get; set; }
-
-    public Collider PlayerCollider { get { return PlayerObject.transform.GetComponent<Collider>(); } }
 
     public float SmoothRotation { get { return 0.15f; } }
 
