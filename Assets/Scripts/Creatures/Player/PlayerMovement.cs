@@ -2,7 +2,7 @@
 
 public class PlayerMovement : Creature
 {
-    private float movementSpeed = 8;
+    private float movementSpeed = 50;
     private float currentMovementSpeed;
     private float speedSmoothTime = 0.1f;
     private float turnSmoothTime = 0.1f;
@@ -18,6 +18,7 @@ public class PlayerMovement : Creature
     Transform cameraTransform;
 
     private float rotationSpeed = 0.1f;
+    private float maxSpeed = 15;
 
     private void Start()
     {
@@ -31,7 +32,7 @@ public class PlayerMovement : Creature
             jumpPressed = true;
 
         isGrounded = GroundCheck();
-        Debug.Log(isGrounded);
+        Debug.Log(playerRigid.velocity);
 
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, transform.localScale.y / 2, transform.localScale.z / 2 - 0.01f);
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, 0.1f, Color.red);
@@ -67,13 +68,21 @@ public class PlayerMovement : Creature
         Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
-        newDirection.y = playerRigid.velocity.y;
+        //newDirection.y = playerRigid.velocity.y;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
         if (movement.magnitude != 0)
             transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
 
-        playerRigid.AddForce((movement * movementSpeed) - playerRigid.velocity, ForceMode.VelocityChange);
+        
+
+        playerRigid.AddForceAtPosition(movement * movementSpeed, transform.position, ForceMode.Force);
+
+        if(playerRigid.velocity.magnitude > maxSpeed)
+        {
+            playerRigid.velocity = playerRigid.velocity.normalized * maxSpeed;
+        }
+
     }
 
     private float GetModifiedSmoothTime(float smoothTime)
