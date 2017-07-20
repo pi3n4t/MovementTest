@@ -22,7 +22,7 @@ public class CameraMovement : MonoBehaviour {
     float currentX = 0;
     float currentY = 0;
 
-    float walkingRadius = 0.5f;
+    float walkingRadius = 2.5f;
 
     private void Start()
     {
@@ -32,8 +32,6 @@ public class CameraMovement : MonoBehaviour {
     private void Update()
     {
         float inputX = Input.GetAxis(StringCollection.HORIZONTAL);
-
-
 
         if (playerObject.transform != null)
         {
@@ -52,6 +50,7 @@ public class CameraMovement : MonoBehaviour {
 
             currentY = Mathf.Clamp(currentY, yMin, yMax);
         }
+        
     }
     
 

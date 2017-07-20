@@ -20,6 +20,9 @@ public class PlayerMovement : Creature
     private float rotationSpeed = 0.20f;
     private float maxSpeed = 10;
 
+    [SerializeField]
+    private float groundCheckSpacing = 0.1f;
+
     private void Start()
     {
         playerRigid = gameObject.GetComponent<Rigidbody>();
@@ -32,10 +35,10 @@ public class PlayerMovement : Creature
             jumpPressed = true;
 
         isGrounded = GroundCheck();
-        Debug.Log(playerRigid.velocity);
+        Debug.Log(isGrounded);
 
-        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, transform.localScale.y / 2, transform.localScale.z / 2 - 0.01f);
-        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, 0.1f, Color.red);
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
+        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, (transform.localScale.y / 2) + groundCheckSpacing, Color.red);
     }
 
     private void FixedUpdate()
@@ -72,12 +75,12 @@ public class PlayerMovement : Creature
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
         if (movement.magnitude != 0)
-            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z).normalized * rotationSpeed);
+            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
 
 
         playerRigid.AddForce(movement * movementSpeed, ForceMode.Acceleration);
         playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
-
+        
         /*
         playerRigid.AddForceAtPosition(movement * movementSpeed, transform.position, ForceMode.Force);
 
@@ -102,6 +105,6 @@ public class PlayerMovement : Creature
     private bool GroundCheck()
     {
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
     }
 }
