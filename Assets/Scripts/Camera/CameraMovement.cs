@@ -22,7 +22,7 @@ public class CameraMovement : MonoBehaviour {
     float currentX = 0;
     float currentY = 0;
 
-    float walkingRadius = 2.5f;
+    float walkingRadius = 0.33f;
 
     private void Start()
     {

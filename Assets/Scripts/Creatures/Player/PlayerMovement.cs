@@ -2,7 +2,7 @@
 
 public class PlayerMovement : Creature
 {
-    private float movementSpeed = 30; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move
+    private float movementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; DOn't know yet how slopes work
     private float currentMovementSpeed;
     private float speedSmoothTime = 0.1f;
     private float turnSmoothTime = 0.1f;
@@ -19,9 +19,10 @@ public class PlayerMovement : Creature
 
     private float rotationSpeed = 0.20f;
     private float maxSpeed = 10;
-
-    [SerializeField]
     private float groundCheckSpacing = 0.1f;
+    RaycastHit floorInfo;
+    float gravityMultiplier = -0.25f;
+    float angleOfFloor = 0f;
 
     private void Start()
     {
@@ -33,9 +34,14 @@ public class PlayerMovement : Creature
     {
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
+        else
+            jumpPressed = false;
 
         isGrounded = GroundCheck();
-        Debug.Log(isGrounded);
+        angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
+
+        if (!isGrounded)
+            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity*gravityMultiplier)", because of the global gravity already in place
 
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, (transform.localScale.y / 2) + groundCheckSpacing, Color.red);
@@ -71,24 +77,24 @@ public class PlayerMovement : Creature
         Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
-        //newDirection.y = playerRigid.velocity.y;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
         if (movement.magnitude != 0)
-            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
-
-
-        playerRigid.AddForce(movement * movementSpeed, ForceMode.Acceleration);
-        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
-        
-        /*
-        playerRigid.AddForceAtPosition(movement * movementSpeed, transform.position, ForceMode.Force);
-
-        if(playerRigid.velocity.magnitude > maxSpeed)
         {
-            playerRigid.velocity = playerRigid.velocity.normalized * maxSpeed;
+            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
+            //transform.eulerAngles += new Vector3(-(int)Vector3.Angle(floorInfo.normal, Vector3.up), 0, 0);
         }
-        */
+
+
+        playerRigid.AddForce(movement * (movementSpeed + angleOfFloor), ForceMode.Acceleration);
+        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
+
+
+        if (isGrounded && jumpPressed)
+        {
+            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
+            jumpPressed = false;
+        }
     }
 
     private float GetModifiedSmoothTime(float smoothTime)
@@ -105,6 +111,6 @@ public class PlayerMovement : Creature
     private bool GroundCheck()
     {
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
     }
 }
