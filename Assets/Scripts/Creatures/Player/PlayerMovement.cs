@@ -2,7 +2,7 @@
 
 public class PlayerMovement : Creature
 {
-    private float movementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; DOn't know yet how slopes work
+    private float movementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
     private float currentMovementSpeed;
     private float speedSmoothTime = 0.1f;
     private float turnSmoothTime = 0.1f;
@@ -41,7 +41,7 @@ public class PlayerMovement : Creature
         angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
 
         if (!isGrounded)
-            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity*gravityMultiplier)", because of the global gravity already in place
+            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
 
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, (transform.localScale.y / 2) + groundCheckSpacing, Color.red);
@@ -82,7 +82,6 @@ public class PlayerMovement : Creature
         if (movement.magnitude != 0)
         {
             transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
-            //transform.eulerAngles += new Vector3(-(int)Vector3.Angle(floorInfo.normal, Vector3.up), 0, 0);
         }
 
 
