@@ -21,8 +21,11 @@ public class PlayerMovement : Creature
     private float maxSpeed = 10;
     private float groundCheckSpacing = 0.1f;
     RaycastHit floorInfo;
-    float gravityMultiplier = -0.25f;
+    float gravityMultiplier = 0.5f;
     float angleOfFloor = 0f;
+    float wallGroundcheckOffset = 0.01f;
+
+    RaycastHit wallInfo;
 
     private void Start()
     {
@@ -34,17 +37,16 @@ public class PlayerMovement : Creature
     {
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
-        else
+        if(Input.GetButtonUp(StringCollection.JUMP))
             jumpPressed = false;
 
         isGrounded = GroundCheck();
         angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
 
-        if (!isGrounded)
-            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
-
         Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, (transform.localScale.y / 2) + groundCheckSpacing, Color.red);
+
+        Physics.Raycast(transform.position, transform.forward, out wallInfo, 0.01f);
     }
 
     private void FixedUpdate()
@@ -68,16 +70,18 @@ public class PlayerMovement : Creature
         currentMovementSpeed = (new Vector2(playerRigid.velocity.x, playerRigid.velocity.z)).magnitude;
         */
 
-
-
-        Vector3 forward = cameraTransform.forward;
         Vector3 right = cameraTransform.right;
+        Vector3 forward = cameraTransform.forward;
         forward.y = 0f;
+
+
 
         Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
+
+
 
         if (movement.magnitude != 0)
         {
@@ -86,8 +90,11 @@ public class PlayerMovement : Creature
 
 
         playerRigid.AddForce(movement * (movementSpeed + angleOfFloor), ForceMode.Acceleration);
-        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
 
+        if (!isGrounded)
+            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
+
+        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
 
         if (isGrounded && jumpPressed)
         {
@@ -109,7 +116,7 @@ public class PlayerMovement : Creature
 
     private bool GroundCheck()
     {
-        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset);
         return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
     }
 }
