@@ -74,7 +74,7 @@ public class CameraMovement : MonoBehaviour {
         if (playerObject.transform != null)
         {
             Vector3 targetPosition = playerObject.transform.position + Quaternion.Euler(currentY, currentX, 0) * new Vector3(0, 0, -distanceFromTarget);
-            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, 0.1f);
+            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, rotationSmoothTime);
 
             transform.LookAt(playerObject.transform);
         }

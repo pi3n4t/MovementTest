@@ -2,14 +2,19 @@
 
 public class PlayerMovement : Creature
 {
-    private float movementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
+    private enum States
+    {
+        Idle,
+        Move,
+        Jump
+    }
+    private States state;
+
+    private float baseMovementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
     private float currentMovementSpeed;
-    private float speedSmoothTime = 0.1f;
-    private float turnSmoothTime = 0.1f;
-    private float inputHorizontal;
-    private float inputVertical;
+    private float maxSpeed = 10;
     private float jumpPower = 10;
-    private float airControlPercentage = 0.2f;
+    private float airControlPercentage = 0.5f;
     private bool isGrounded;
     private bool jumpPressed;
     private float turnSmoothVelocity;
@@ -18,7 +23,7 @@ public class PlayerMovement : Creature
     Transform cameraTransform;
 
     private float rotationSpeed = 0.20f;
-    private float maxSpeed = 10;
+
     private float groundCheckSpacing = 0.1f;
     RaycastHit floorInfo;
     float gravityMultiplier = 0.5f;
@@ -31,10 +36,13 @@ public class PlayerMovement : Creature
     {
         playerRigid = gameObject.GetComponent<Rigidbody>();
         cameraTransform = Camera.main.gameObject.transform;
+        currentMovementSpeed = baseMovementSpeed;
     }
 
     private void Update()
     {
+        Debug.Log(transform.rotation.eulerAngles.y);
+
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
         if(Input.GetButtonUp(StringCollection.JUMP))
@@ -43,53 +51,37 @@ public class PlayerMovement : Creature
         isGrounded = GroundCheck();
         angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
 
-        Vector3 extents = new Vector3(transform.localScale.x / 2 - 0.01f, 0, transform.localScale.z / 2 - 0.01f);
-        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, (transform.localScale.y / 2) + groundCheckSpacing, Color.red);
+        switch (state){
+            case States.Idle:
+                //Code für Idleanimation etc.
+                break;
+            case States.Jump:
+                //Code für Jumpanimation, movement *= 0.5f, canAttack = false, etc.
+                break;
+            default:
+                //Idleanimation
+                break;
+        }
 
-        Physics.Raycast(transform.position, transform.forward, out wallInfo, 0.01f);
     }
 
     private void FixedUpdate()
     {
-
-        /*
-        Vector2 inputDirection = (new Vector2(Input.GetAxisRaw(StringCollection.HORIZONTAL), Input.GetAxisRaw(StringCollection.VERTICAL))).normalized;
-
-        if (isGrounded && jumpPressed)
-            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
-
-        jumpPressed = false;
-
-        if (inputDirection != Vector2.zero)
-            transform.eulerAngles = Vector3.up * Mathf.SmoothDampAngle(transform.eulerAngles.y, Mathf.Atan2(inputDirection.x, inputDirection.y) * Mathf.Rad2Deg + cameraTransform.eulerAngles.y, ref turnSmoothVelocity, GetModifiedSmoothTime(turnSmoothTime));
-
-        currentMovementSpeed = Mathf.SmoothDamp(currentMovementSpeed, movementSpeed * inputDirection.magnitude, ref speedSmoothVelocity, GetModifiedSmoothTime(speedSmoothTime));
-
-        playerRigid.velocity = transform.forward * currentMovementSpeed + Vector3.up * playerRigid.velocity.y;
-
-        currentMovementSpeed = (new Vector2(playerRigid.velocity.x, playerRigid.velocity.z)).magnitude;
-        */
-
         Vector3 right = cameraTransform.right;
         Vector3 forward = cameraTransform.forward;
         forward.y = 0f;
-
-
 
         Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
-
-
         if (movement.magnitude != 0)
         {
             transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
         }
 
-
-        playerRigid.AddForce(movement * (movementSpeed + angleOfFloor), ForceMode.Acceleration);
+        playerRigid.AddForce(movement * (currentMovementSpeed + angleOfFloor), ForceMode.Acceleration);
 
         if (!isGrounded)
             playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
@@ -99,8 +91,13 @@ public class PlayerMovement : Creature
         if (isGrounded && jumpPressed)
         {
             playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
-            jumpPressed = false;
+            currentMovementSpeed *= airControlPercentage;
         }
+        else if(isGrounded)
+        {
+            currentMovementSpeed = baseMovementSpeed;
+        }
+        
     }
 
     private float GetModifiedSmoothTime(float smoothTime)
