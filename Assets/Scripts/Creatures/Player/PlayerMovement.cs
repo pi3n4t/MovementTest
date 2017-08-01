@@ -2,35 +2,30 @@
 
 public class PlayerMovement : Creature
 {
-    private enum States
-    {
-        Idle,
-        Move,
-        Jump
-    }
-    private States state;
-
-    private float baseMovementSpeed = 40; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
+    private float baseMovementSpeed = 10; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
     private float currentMovementSpeed;
     private float maxSpeed = 10;
-    private float jumpPower = 10;
-    private float airControlPercentage = 0.5f;
-    private bool isGrounded;
-    private bool jumpPressed;
-    private float turnSmoothVelocity;
-    private float speedSmoothVelocity;
-    Rigidbody playerRigid;
-    Transform cameraTransform;
-
     private float rotationSpeed = 0.20f;
 
+    private float jumpPower = 10;
+    private float airControlPercentage = 0.5f;
+    private float gravityMultiplier = 1.0f;
     private float groundCheckSpacing = 0.1f;
-    RaycastHit floorInfo;
-    float gravityMultiplier = 0.5f;
-    float angleOfFloor = 0f;
-    float wallGroundcheckOffset = 0.01f;
+    private float angleOfFloor;
 
-    RaycastHit wallInfo;
+    private float speedSmoothVelocity;
+    private float speedSmoothTime = 0.1f;
+
+    Rigidbody playerRigid;
+    Transform cameraTransform;    
+    RaycastHit floorInfo;
+
+    private bool isGrounded;
+    private bool jumpPressed;
+    private bool isJumping;
+    private bool canDoubleJump = true;
+
+
 
     private void Start()
     {
@@ -41,7 +36,7 @@ public class PlayerMovement : Creature
 
     private void Update()
     {
-        Debug.Log(transform.rotation.eulerAngles.y);
+        Debug.Log(playerRigid.velocity);
 
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
@@ -51,22 +46,39 @@ public class PlayerMovement : Creature
         isGrounded = GroundCheck();
         angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
 
-        switch (state){
-            case States.Idle:
-                //Code für Idleanimation etc.
-                break;
-            case States.Jump:
-                //Code für Jumpanimation, movement *= 0.5f, canAttack = false, etc.
-                break;
-            default:
-                //Idleanimation
-                break;
+        if (isJumping && jumpPressed && canDoubleJump)
+        {
+            canDoubleJump = false;
+            jumpPressed = false;
+            currentMovementSpeed = baseMovementSpeed;
+            //playerRigid.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
+            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
         }
 
-    }
+        if (isGrounded && jumpPressed)
+        {
+            //playerRigid.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
+            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
+            currentMovementSpeed *= airControlPercentage;
+            isJumping = true;
+            jumpPressed = false;
+        }
+        else if (isGrounded)
+        {
+            currentMovementSpeed = baseMovementSpeed;
+            isJumping = false;
+            canDoubleJump = true;
+        }
+        else
+        {
+            isJumping = true;
+        }
 
-    private void FixedUpdate()
-    {
+        if (transform.position.y < -10)
+        {
+            transform.position = new Vector3(0, 2, 0);
+        }
+
         Vector3 right = cameraTransform.right;
         Vector3 forward = cameraTransform.forward;
         forward.y = 0f;
@@ -81,39 +93,21 @@ public class PlayerMovement : Creature
             transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
         }
 
-        playerRigid.AddForce(movement * (currentMovementSpeed + angleOfFloor), ForceMode.Acceleration);
-
-        if (!isGrounded)
-            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
-
+        playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
         playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
-
-        if (isGrounded && jumpPressed)
-        {
-            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
-            currentMovementSpeed *= airControlPercentage;
-        }
-        else if(isGrounded)
-        {
-            currentMovementSpeed = baseMovementSpeed;
-        }
-        
     }
 
-    private float GetModifiedSmoothTime(float smoothTime)
+    private void FixedUpdate()
     {
-        if (isGrounded)
-            return smoothTime;
-
-        if (airControlPercentage == 0)
-            return float.MaxValue;
-
-        return smoothTime / airControlPercentage;
+        if (!isGrounded)
+        { 
+            playerRigid.AddForce(Physics.gravity * gravityMultiplier, ForceMode.Acceleration); //this is "Physics.gravity + (Physics.gravity * gravityMultiplier)", because of the global gravity already in place
+        }
     }
 
     private bool GroundCheck()
     {
-        Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset);
+        Vector3 extents = new Vector3(transform.localScale.x / 2, 0, transform.localScale.z / 2);
         return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
     }
 }

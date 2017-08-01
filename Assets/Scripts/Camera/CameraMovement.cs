@@ -12,8 +12,8 @@ public class CameraMovement : MonoBehaviour {
     float verticalRotation;
     float yMin = 15;
     float yMax = 80;
-    float distanceFromTarget = 10;
-    float rotationSmoothTime = 0.12f;
+    float distanceFromTarget = 12;
+    float rotationSmoothTime = 0.05f;
     Vector3 currentRotation;
     Vector3 rotationSmoothVelocity = Vector3.zero;
     GameObject playerObject;
@@ -22,7 +22,7 @@ public class CameraMovement : MonoBehaviour {
     float currentX = 0;
     float currentY = 0;
 
-    float walkingRadius = 0.33f;
+    float walkingRadius = 0.9f;
 
     private void Start()
     {
@@ -56,28 +56,12 @@ public class CameraMovement : MonoBehaviour {
 
     private void LateUpdate()
     {
-        /*
-        if (playerObject != null)
-        {
-            horizontalRotation += Input.GetAxisRaw(StringCollection.MOUSE_X) * sensitivityX;
-            verticalRotation -= Input.GetAxisRaw(StringCollection.MOUSE_Y) * sensitivityY;
-            verticalRotation = Mathf.Clamp(verticalRotation, yMin, yMax);
-
-            currentRotation = Vector3.SmoothDamp(currentRotation, new Vector3(verticalRotation, horizontalRotation), ref rotationSmoothVelocity, rotationSmoothTime);
-
-            transform.eulerAngles = currentRotation;
-
-            transform.position = playerObject.transform.position - transform.forward * distanceFromTarget;
-        }
-        */
-        
         if (playerObject.transform != null)
         {
             Vector3 targetPosition = playerObject.transform.position + Quaternion.Euler(currentY, currentX, 0) * new Vector3(0, 0, -distanceFromTarget);
             transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, rotationSmoothTime);
 
             transform.LookAt(playerObject.transform);
-        }
-        
+        }        
     }
 }
