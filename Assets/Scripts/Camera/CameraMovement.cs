@@ -12,7 +12,7 @@ public class CameraMovement : MonoBehaviour {
     float verticalRotation;
     float yMin = 15;
     float yMax = 80;
-    float distanceFromTarget = 12;
+    float distanceFromTarget = 8;
     float rotationSmoothTime = 0.05f;
     Vector3 currentRotation;
     Vector3 rotationSmoothVelocity = Vector3.zero;
@@ -22,7 +22,7 @@ public class CameraMovement : MonoBehaviour {
     float currentX = 0;
     float currentY = 0;
 
-    float walkingRadius = 0.9f;
+    float walkingRadius = 1.45f; //smaller numbers == bigger radius
 
     private void Start()
     {
@@ -42,10 +42,10 @@ public class CameraMovement : MonoBehaviour {
             }
             
 
-            currentX += Input.GetAxis(StringCollection.MOUSE_X) * sensitivityX;
+            currentX += Input.GetAxisRaw(StringCollection.MOUSE_X) * sensitivityX;
             //currentX += Input.GetAxis(StringCollection.JOYSTICK_X) * sensitivityX;
 
-            currentY += Input.GetAxis(StringCollection.MOUSE_Y) * -sensitivityY;
+            currentY += Input.GetAxisRaw(StringCollection.MOUSE_Y) * -sensitivityY;
             //currentY += Input.GetAxis(StringCollection.JOYSTICK_Y) * -sensitivityY; Because Axis not setup yet
 
             currentY = Mathf.Clamp(currentY, yMin, yMax);
@@ -56,12 +56,13 @@ public class CameraMovement : MonoBehaviour {
 
     private void LateUpdate()
     {
-        if (playerObject.transform != null)
+        if (playerObject != null)
         {
-            Vector3 targetPosition = playerObject.transform.position + Quaternion.Euler(currentY, currentX, 0) * new Vector3(0, 0, -distanceFromTarget);
-            transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref rotationSmoothVelocity, rotationSmoothTime);
+            currentRotation = Vector3.SmoothDamp(currentRotation, new Vector3(currentY, currentX), ref rotationSmoothVelocity, rotationSmoothTime);
 
-            transform.LookAt(playerObject.transform);
-        }        
+            transform.eulerAngles = currentRotation;
+
+            transform.position = playerObject.transform.position - transform.forward * distanceFromTarget;
+        }
     }
 }

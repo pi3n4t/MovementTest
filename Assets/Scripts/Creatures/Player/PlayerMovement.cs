@@ -2,30 +2,24 @@
 
 public class PlayerMovement : Creature
 {
-    private float baseMovementSpeed = 10; //((movementSpeed-maxSpeed)/2)m/s² = amount of time it takes to reach maxSpeed in seconds; if less than maxSpeed, can't move; Don't know yet how slopes work
+    private float baseMovementSpeed = 10;
     private float currentMovementSpeed;
     private float maxSpeed = 10;
-    private float rotationSpeed = 0.20f;
+    private float rotationSpeed = 0.65f;
 
-    private float jumpPower = 10;
+    private float jumpPower = 15;
     private float airControlPercentage = 0.5f;
-    private float gravityMultiplier = 1.0f;
+    private float gravityMultiplier = 2.5f;
     private float groundCheckSpacing = 0.1f;
-    private float angleOfFloor;
-
-    private float speedSmoothVelocity;
-    private float speedSmoothTime = 0.1f;
+    private float wallGroundcheckOffset = 0.05f;
 
     Rigidbody playerRigid;
     Transform cameraTransform;    
-    RaycastHit floorInfo;
 
     private bool isGrounded;
     private bool jumpPressed;
     private bool isJumping;
-    private bool canDoubleJump = true;
-
-
+    private bool canDoubleJump;
 
     private void Start()
     {
@@ -36,28 +30,23 @@ public class PlayerMovement : Creature
 
     private void Update()
     {
-        Debug.Log(playerRigid.velocity);
-
         if (Input.GetButtonDown(StringCollection.JUMP))
             jumpPressed = true;
         if(Input.GetButtonUp(StringCollection.JUMP))
             jumpPressed = false;
 
         isGrounded = GroundCheck();
-        angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
 
         if (isJumping && jumpPressed && canDoubleJump)
         {
             canDoubleJump = false;
             jumpPressed = false;
             currentMovementSpeed = baseMovementSpeed;
-            //playerRigid.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
             playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
         }
 
         if (isGrounded && jumpPressed)
         {
-            //playerRigid.AddForce(transform.up * jumpPower, ForceMode.VelocityChange);
             playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
             currentMovementSpeed *= airControlPercentage;
             isJumping = true;
@@ -83,7 +72,7 @@ public class PlayerMovement : Creature
         Vector3 forward = cameraTransform.forward;
         forward.y = 0f;
 
-        Vector3 newDirection = (forward * Input.GetAxis(StringCollection.VERTICAL)) + (right * Input.GetAxis(StringCollection.HORIZONTAL));
+        Vector3 newDirection = (forward * Input.GetAxisRaw(StringCollection.VERTICAL)) + (right * Input.GetAxisRaw(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
@@ -107,7 +96,10 @@ public class PlayerMovement : Creature
 
     private bool GroundCheck()
     {
-        Vector3 extents = new Vector3(transform.localScale.x / 2, 0, transform.localScale.z / 2);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, (transform.localScale.y / 2) + groundCheckSpacing);
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset);
+        float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
+
+        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, halfHeight + groundCheckSpacing, Color.red);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, halfHeight + groundCheckSpacing);
     }
 }
