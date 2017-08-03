@@ -9,7 +9,7 @@ public class PlayerMovement : Creature
 
     private float jumpPower = 15;
     private float airControlPercentage = 0.5f;
-    private float gravityMultiplier = 2.5f;
+    private float gravityMultiplier = 4.5f;
     private float groundCheckSpacing = 0.1f;
     private float wallGroundcheckOffset = 0.05f;
 
@@ -99,7 +99,6 @@ public class PlayerMovement : Creature
         Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset);
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
 
-        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, halfHeight + groundCheckSpacing, Color.red);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, halfHeight + groundCheckSpacing);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
     }
 }
