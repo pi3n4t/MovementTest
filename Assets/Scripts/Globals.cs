@@ -22,4 +22,9 @@ public class Globals
     {
         return Mathf.Clamp(currentValue + valueToAdd, 0, maxValue);
     }
+
+    public static GameObject GetPlayerObject()
+    {
+        return GameObject.FindGameObjectWithTag(StringCollection.PLAYER);
+    }
 }
