@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class PlayerMovement : Creature
 {
@@ -6,6 +7,7 @@ public class PlayerMovement : Creature
     private float currentMovementSpeed;
     private float maxSpeed = 15;
     private float rotationSpeed = 0.65f;
+    private bool canMove = true;
 
     private float jumpPower = 20;
     private float airControlPercentage = 0.5f;
@@ -22,9 +24,16 @@ public class PlayerMovement : Creature
     private bool isJumping;
     private bool canDoubleJump;
 
+    private bool isDashing;
     private float chargeTime;
+    private float dashDistance = 25;
     private const float MIN_CHARGE = 0.5f;
     private const float MAX_CHARGE = 1.5f;
+    private const float DASH_DURATION = 0.2f;
+
+    private RaycastHit floorInfo;
+    private float angleOfFloor;
+    Quaternion playerMovementRotation;
 
     private void Start()
     {
@@ -42,13 +51,16 @@ public class PlayerMovement : Creature
             jumpPressed = false;
 
         isGrounded = GroundCheck();
+        angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
+        Debug.Log(angleOfFloor);
+        playerMovementRotation = Quaternion.AngleAxis(angleOfFloor, transform.forward);
 
         if (isJumping && jumpPressed && canDoubleJump)
         {
             canDoubleJump = false;
             jumpPressed = false;
             currentMovementSpeed = baseMovementSpeed;
-            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
+            Jump(jumpPower);
         }
 
         if (isGrounded)
@@ -64,7 +76,7 @@ public class PlayerMovement : Creature
 
         if (isGrounded && jumpPressed)
         {
-            playerRigid.velocity = new Vector3(playerRigid.velocity.x, jumpPower, playerRigid.velocity.z);
+            Jump(jumpPower);
             currentMovementSpeed = baseMovementSpeed * airControlPercentage;
             isJumping = true;
             jumpPressed = false;
@@ -73,6 +85,7 @@ public class PlayerMovement : Creature
         if (transform.position.y < -10)
         {
             transform.position = new Vector3(0, 2, 0);
+            playerRigid.velocity = Vector3.zero;
         }
 
         Vector3 right = cameraTransform.right;
@@ -84,22 +97,27 @@ public class PlayerMovement : Creature
         Vector3 movement = newDirection.normalized;
         movement = new Vector3(movement.x, newDirection.y, movement.z);
 
-        if (movement.magnitude != 0)
+        if (canMove)
         {
-            transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
-        }
+            playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
 
-        playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
-        playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
+            if (movement.magnitude != 0)
+            {
+                transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
+            }
+        }      
+        //playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
 
         if (Input.GetKey(KeyCode.LeftShift))
         {
             chargeTime += Time.deltaTime;
         }
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftShift) && !isDashing)
         {
+            isDashing = true;
+            canMove = false;
             chargeTime = Mathf.Clamp(chargeTime, MIN_CHARGE, MAX_CHARGE);
-            ChargedDash(chargeTime);
+            StartCoroutine(ChargedDash(chargeTime));
             chargeTime = 0;
         }
     }
@@ -112,18 +130,35 @@ public class PlayerMovement : Creature
         }
     }
 
+    private void Jump(float power)
+    {
+        playerRigid.velocity = new Vector3(playerRigid.velocity.x, power, playerRigid.velocity.z);
+    }
+
     private bool GroundCheck()
     {
         Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, halfHeight, Color.red);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
+        return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
     }
 
-    private void ChargedDash(float charge)
+    private IEnumerator ChargedDash(float charge)
     {
+        float currentDuration = 0.0f;
+
         playerRigid.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
-        transform.position = transform.position + (transform.forward * (charge * 10));
+       
+        while (currentDuration < DASH_DURATION)
+        {
+            playerRigid.velocity = (playerMovementRotation * transform.forward) * charge * (dashDistance / DASH_DURATION);
+            currentDuration += Time.deltaTime;
+            yield return null;
+        }
+
         Debug.Log(charge);
+        playerRigid.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+        isDashing = false;
+        canMove = true;
     }
 }
