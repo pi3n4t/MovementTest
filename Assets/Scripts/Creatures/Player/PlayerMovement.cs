@@ -8,6 +8,7 @@ public class PlayerMovement : Creature
     private float maxSpeed = 15;
     private float rotationSpeed = 0.65f;
     private bool canMove = true;
+    private Vector3 parallelToGround;
 
     private float jumpPower = 20;
     private float airControlPercentage = 0.5f;
@@ -52,8 +53,6 @@ public class PlayerMovement : Creature
 
         isGrounded = GroundCheck();
         angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
-        Debug.Log(Vector3.Cross(floorInfo.normal, Vector3.up));
-        playerMovementRotation = Quaternion.AngleAxis(angleOfFloor, transform.forward);
 
         if (isJumping && jumpPressed && canDoubleJump)
         {
@@ -100,6 +99,8 @@ public class PlayerMovement : Creature
         if (canMove)
         {
             playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
+            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, playerRigid.velocity), floorInfo.normal);
+            playerRigid.velocity = new Vector3(parallelToGround.x, playerRigid.velocity.y, parallelToGround.z);
 
             if (movement.magnitude != 0)
             {
@@ -137,27 +138,27 @@ public class PlayerMovement : Creature
 
     private bool GroundCheck()
     {
-        Vector3 extents = Vector3.Cross(floorInfo.normal, Vector3.up) + new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
+        Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
-        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, Vector3.down, halfHeight, Color.red);
-        return Physics.BoxCast(transform.position, extents, Vector3.down, out floorInfo, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
+        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, -transform.up, halfHeight, Color.red);
+        return Physics.BoxCast(transform.position, extents, -transform.up, out floorInfo, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
     }
 
     private IEnumerator ChargedDash(float charge)
     {
         float currentDuration = 0.0f;
 
-        playerRigid.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
+        playerRigid.velocity = Vector3.zero;
        
         while (currentDuration < DASH_DURATION)
         {
-            playerRigid.velocity = (Vector3.Cross(floorInfo.normal, Vector3.up) + transform.forward) * charge * (dashDistance / DASH_DURATION);
+            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal);
+            playerRigid.velocity = (parallelToGround) * charge * (dashDistance / DASH_DURATION);
             currentDuration += Time.deltaTime;
             yield return null;
         }
+        playerRigid.velocity = Vector3.zero;
 
-        Debug.Log(charge);
-        playerRigid.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
         isDashing = false;
         canMove = true;
     }
