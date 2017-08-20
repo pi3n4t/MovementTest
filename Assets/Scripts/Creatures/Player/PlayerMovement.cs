@@ -19,6 +19,7 @@ public class PlayerMovement : Creature
     Rigidbody playerRigid;
     Transform cameraTransform;
     Renderer playerRenderer;
+    CapsuleCollider playerCollider;
 
     private bool isGrounded;
     private bool jumpPressed;
@@ -27,20 +28,24 @@ public class PlayerMovement : Creature
 
     private bool isDashing;
     private float chargeTime;
-    private float dashDistance = 25;
-    private const float MIN_CHARGE = 0.5f;
+    private float dashSpeed = 35;
+    private const float MIN_CHARGE = 0.75f;
     private const float MAX_CHARGE = 1.5f;
-    private const float DASH_DURATION = 0.2f;
+    private const float DASH_DURATION = 0.25f;
 
     private RaycastHit floorInfo;
     private float angleOfFloor;
     Quaternion playerMovementRotation;
+
+    [SerializeField]
+    bool dash = false;
 
     private void Start()
     {
         playerRigid = gameObject.GetComponent<Rigidbody>();
         cameraTransform = Camera.main.gameObject.transform;
         playerRenderer = gameObject.GetComponent<Renderer>();
+        playerCollider = gameObject.GetComponent<CapsuleCollider>();
         currentMovementSpeed = baseMovementSpeed;
     }
 
@@ -52,7 +57,7 @@ public class PlayerMovement : Creature
             jumpPressed = false;
 
         isGrounded = GroundCheck();
-        angleOfFloor = (int)Vector3.Angle(floorInfo.normal, Vector3.up);
+        
 
         if (isJumping && jumpPressed && canDoubleJump)
         {
@@ -121,6 +126,12 @@ public class PlayerMovement : Creature
             StartCoroutine(ChargedDash(chargeTime));
             chargeTime = 0;
         }
+
+        if (dash)
+        {
+            dash = false;
+            StartCoroutine(ChargedDash(MIN_CHARGE));
+        }
     }
 
     private void FixedUpdate()
@@ -138,7 +149,7 @@ public class PlayerMovement : Creature
 
     private bool GroundCheck()
     {
-        Vector3 extents = new Vector3(transform.localScale.x / 2 - wallGroundcheckOffset, 0, transform.localScale.z / 2 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
+        Vector3 extents = new Vector3(transform.localScale.x / 3 - wallGroundcheckOffset, 0, transform.localScale.z / 3 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, -transform.up, halfHeight, Color.red);
         return Physics.BoxCast(transform.position, extents, -transform.up, out floorInfo, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
@@ -147,13 +158,26 @@ public class PlayerMovement : Creature
     private IEnumerator ChargedDash(float charge)
     {
         float currentDuration = 0.0f;
+        parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal);
+        bool isTargetSpaceOccupied = Physics.BoxCast(transform.position + (transform.forward * charge * (dashSpeed / DASH_DURATION)) * 0.05f, transform.localScale, transform.forward, transform.rotation, charge * (dashSpeed / DASH_DURATION) * 0.45f);
+        Debug.Log(isTargetSpaceOccupied);
 
-        playerRigid.velocity = Vector3.zero;
-       
         while (currentDuration < DASH_DURATION)
         {
+            ExtDebug.DrawBoxCastBox(transform.position + (transform.forward * (charge * (dashSpeed / DASH_DURATION))) * 0.15f, transform.localScale / 2, transform.rotation, transform.forward, charge * (dashSpeed / DASH_DURATION), Color.green);
+            if (currentDuration < 0.15f * DASH_DURATION || currentDuration > 0.85f * DASH_DURATION)
+            {
+                playerRenderer.enabled = true;
+                playerCollider.enabled = true;
+            }
+            else
+            {
+                playerRenderer.enabled = false;
+                playerCollider.enabled = false;
+            }
+            playerRigid.velocity = Vector3.zero;
             parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal);
-            playerRigid.velocity = (parallelToGround) * charge * (dashDistance / DASH_DURATION);
+            playerRigid.velocity = parallelToGround * charge * (dashSpeed / DASH_DURATION);
             currentDuration += Time.deltaTime;
             yield return null;
         }
