@@ -99,13 +99,16 @@ public class PlayerMovement : Creature
         Vector3 newDirection = (forward * Input.GetAxisRaw(StringCollection.VERTICAL)) + (right * Input.GetAxisRaw(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
-        movement = new Vector3(movement.x, newDirection.y, movement.z);
+        //movement = new Vector3(movement.x, newDirection.y, movement.z);
+        Physics.Raycast(transform.position, -transform.up, out floorInfo, 10);
 
         if (canMove)
         {
-            playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
-            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, playerRigid.velocity), floorInfo.normal);
-            playerRigid.velocity = new Vector3(parallelToGround.x, playerRigid.velocity.y, parallelToGround.z);
+            //playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
+            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, movement), floorInfo.normal);
+            movement = (movement + parallelToGround).normalized * currentMovementSpeed;
+            movement.y = playerRigid.velocity.y;
+            playerRigid.velocity = movement;
 
             if (movement.magnitude != 0)
             {
@@ -152,19 +155,19 @@ public class PlayerMovement : Creature
         Vector3 extents = new Vector3(transform.localScale.x / 3 - wallGroundcheckOffset, 0, transform.localScale.z / 3 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
         ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, -transform.up, halfHeight, Color.red);
-        return Physics.BoxCast(transform.position, extents, -transform.up, out floorInfo, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
+        return Physics.BoxCast(transform.position, extents, -transform.up, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
     }
 
     private IEnumerator ChargedDash(float charge)
     {
         float currentDuration = 0.0f;
-        parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal);
-        bool isTargetSpaceOccupied = Physics.BoxCast(transform.position + (transform.forward * charge * (dashSpeed / DASH_DURATION)) * 0.05f, transform.localScale, transform.forward, transform.rotation, charge * (dashSpeed / DASH_DURATION) * 0.45f);
-        Debug.Log(isTargetSpaceOccupied);
+        parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal).normalized;
+        bool isTargetSpaceOccupied = Physics.BoxCast(transform.position, transform.localScale, transform.forward, transform.rotation, charge * dashSpeed);
+        Debug.Log(parallelToGround * charge * dashSpeed);
 
         while (currentDuration < DASH_DURATION)
         {
-            ExtDebug.DrawBoxCastBox(transform.position + (transform.forward * (charge * (dashSpeed / DASH_DURATION))) * 0.15f, transform.localScale / 2, transform.rotation, transform.forward, charge * (dashSpeed / DASH_DURATION), Color.green);
+            ExtDebug.DrawBoxCastBox(transform.position, transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed, Color.green);
             if (currentDuration < 0.15f * DASH_DURATION || currentDuration > 0.85f * DASH_DURATION)
             {
                 playerRenderer.enabled = true;
