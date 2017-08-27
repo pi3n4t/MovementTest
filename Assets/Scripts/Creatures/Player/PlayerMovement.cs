@@ -161,14 +161,27 @@ public class PlayerMovement : Creature
     private IEnumerator ChargedDash(float charge)
     {
         float currentDuration = 0.0f;
+        float thresholdPercentageInvisibility = 0.15f;
+        float thresholdPercentageVisibility = 0.85f;
+
         parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal).normalized;
-        bool isTargetSpaceOccupied = Physics.BoxCast(transform.position, transform.localScale, transform.forward, transform.rotation, charge * dashSpeed);
-        Debug.Log(parallelToGround * charge * dashSpeed);
+        bool isTargetSpaceUntilInvisibilityOccupied = Physics.BoxCast(transform.position, transform.localScale / 2, transform.forward, transform.rotation, charge * dashSpeed * thresholdPercentageInvisibility);
+        bool isTargetSpaceAfterInvisibilityOccupied = Physics.BoxCast(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility), transform.localScale / 2, transform.forward, transform.rotation, charge * dashSpeed * thresholdPercentageInvisibility); ;
+        Debug.Log(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility));
 
         while (currentDuration < DASH_DURATION)
         {
-            ExtDebug.DrawBoxCastBox(transform.position, transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed, Color.green);
-            if (currentDuration < 0.15f * DASH_DURATION || currentDuration > 0.85f * DASH_DURATION)
+            ExtDebug.DrawBoxCastBox(transform.position, transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed * thresholdPercentageInvisibility, Color.green);
+            ExtDebug.DrawBoxCastBox(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility), transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed * thresholdPercentageInvisibility, Color.green);
+
+            if (isTargetSpaceUntilInvisibilityOccupied ||isTargetSpaceUntilInvisibilityOccupied)
+            {
+                isDashing = false;
+                canMove = true;
+                playerRigid.velocity = Vector3.zero;
+                yield break;
+            }
+            else if (currentDuration < thresholdPercentageInvisibility * DASH_DURATION || currentDuration > thresholdPercentageVisibility * DASH_DURATION)
             {
                 playerRenderer.enabled = true;
                 playerCollider.enabled = true;
