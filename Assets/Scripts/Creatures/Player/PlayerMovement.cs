@@ -5,7 +5,6 @@ public class PlayerMovement : Creature
 {
     private float baseMovementSpeed = 10;
     private float currentMovementSpeed;
-    private float maxSpeed = 15;
     private float rotationSpeed = 0.65f;
     private bool canMove = true;
     private Vector3 parallelToGround;
@@ -18,9 +17,7 @@ public class PlayerMovement : Creature
 
     Rigidbody playerRigid;
     Transform cameraTransform;
-    Renderer playerRenderer;
-    CapsuleCollider playerCollider;
-
+   
     private bool isGrounded;
     private bool jumpPressed;
     private bool isJumping;
@@ -31,11 +28,10 @@ public class PlayerMovement : Creature
     private float dashSpeed = 35;
     private const float MIN_CHARGE = 0.75f;
     private const float MAX_CHARGE = 1.5f;
-    private const float DASH_DURATION = 0.25f;
+    private float dashDuration = 0.25f;
 
     private RaycastHit floorInfo;
     private float angleOfFloor;
-    Quaternion playerMovementRotation;
 
     [SerializeField]
     bool dash = false;
@@ -44,8 +40,6 @@ public class PlayerMovement : Creature
     {
         playerRigid = gameObject.GetComponent<Rigidbody>();
         cameraTransform = Camera.main.gameObject.transform;
-        playerRenderer = gameObject.GetComponent<Renderer>();
-        playerCollider = gameObject.GetComponent<CapsuleCollider>();
         currentMovementSpeed = baseMovementSpeed;
     }
 
@@ -56,8 +50,7 @@ public class PlayerMovement : Creature
         if(Input.GetButtonUp(StringCollection.JUMP))
             jumpPressed = false;
 
-        isGrounded = GroundCheck();
-        
+        isGrounded = GroundCheck();       
 
         if (isJumping && jumpPressed && canDoubleJump)
         {
@@ -99,12 +92,14 @@ public class PlayerMovement : Creature
         Vector3 newDirection = (forward * Input.GetAxisRaw(StringCollection.VERTICAL)) + (right * Input.GetAxisRaw(StringCollection.HORIZONTAL));
 
         Vector3 movement = newDirection.normalized;
-        //movement = new Vector3(movement.x, newDirection.y, movement.z);
-        Physics.Raycast(transform.position, -transform.up, out floorInfo, 10);
+        Physics.Raycast(transform.position, -transform.up, out floorInfo, 2);
+        if(floorInfo.collider == null)
+        {
+            floorInfo.normal = Vector3.up;
+        }
 
         if (canMove)
         {
-            //playerRigid.velocity = new Vector3(movement.x * currentMovementSpeed, playerRigid.velocity.y, movement.z * currentMovementSpeed);
             parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, movement), floorInfo.normal);
             movement = (movement + parallelToGround).normalized * currentMovementSpeed;
             movement.y = playerRigid.velocity.y;
@@ -115,8 +110,7 @@ public class PlayerMovement : Creature
                 transform.rotation = Quaternion.LookRotation(transform.forward + new Vector3(movement.x, 0, movement.z) * rotationSpeed);
             }
         }      
-        //playerRigid.velocity = new Vector3(Mathf.Clamp(playerRigid.velocity.x, -maxSpeed, maxSpeed), playerRigid.velocity.y, Mathf.Clamp(playerRigid.velocity.z, -maxSpeed, maxSpeed));
-
+        
         if (Input.GetKey(KeyCode.LeftShift))
         {
             chargeTime += Time.deltaTime;
@@ -127,6 +121,13 @@ public class PlayerMovement : Creature
             canMove = false;
             chargeTime = Mathf.Clamp(chargeTime, MIN_CHARGE, MAX_CHARGE);
             StartCoroutine(ChargedDash(chargeTime));
+            chargeTime = 0;
+        }
+        if(Input.GetKeyDown(KeyCode.LeftControl) && !isDashing)
+        {
+            isDashing = true;
+            canMove = false;
+            StartCoroutine(ChargedDash((MIN_CHARGE + MAX_CHARGE) / 2));
             chargeTime = 0;
         }
 
@@ -154,46 +155,19 @@ public class PlayerMovement : Creature
     {
         Vector3 extents = new Vector3(transform.localScale.x / 3 - wallGroundcheckOffset, 0, transform.localScale.z / 3 - wallGroundcheckOffset); //On CubeCharacter do not divide by 2
         float halfHeight = transform.localScale.y; //On CubeCharacter this needs to be /2, because of the form
-        ExtDebug.DrawBoxCastBox(transform.position, extents, transform.rotation, -transform.up, halfHeight, Color.red);
+        ExtDebug.DrawBoxCastBox(transform.position, extents, -transform.up, transform.rotation, halfHeight, Color.red);
         return Physics.BoxCast(transform.position, extents, -transform.up, transform.rotation, halfHeight + groundCheckSpacing, -1, QueryTriggerInteraction.Ignore);
     }
 
     private IEnumerator ChargedDash(float charge)
     {
         float currentDuration = 0.0f;
-        float thresholdPercentageInvisibility = 0.15f;
-        float thresholdPercentageVisibility = 0.85f;
 
-        parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal).normalized;
-        bool isTargetSpaceUntilInvisibilityOccupied = Physics.BoxCast(transform.position, transform.localScale / 2, transform.forward, transform.rotation, charge * dashSpeed * thresholdPercentageInvisibility);
-        bool isTargetSpaceAfterInvisibilityOccupied = Physics.BoxCast(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility), transform.localScale / 2, transform.forward, transform.rotation, charge * dashSpeed * thresholdPercentageInvisibility); ;
-        Debug.Log(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility));
-
-        while (currentDuration < DASH_DURATION)
+        while (currentDuration < dashDuration)
         {
-            ExtDebug.DrawBoxCastBox(transform.position, transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed * thresholdPercentageInvisibility, Color.green);
-            ExtDebug.DrawBoxCastBox(transform.position + (transform.forward * charge * dashSpeed * thresholdPercentageVisibility), transform.localScale / 2, transform.rotation, transform.forward, charge * dashSpeed * thresholdPercentageInvisibility, Color.green);
-
-            if (isTargetSpaceUntilInvisibilityOccupied ||isTargetSpaceUntilInvisibilityOccupied)
-            {
-                isDashing = false;
-                canMove = true;
-                playerRigid.velocity = Vector3.zero;
-                yield break;
-            }
-            else if (currentDuration < thresholdPercentageInvisibility * DASH_DURATION || currentDuration > thresholdPercentageVisibility * DASH_DURATION)
-            {
-                playerRenderer.enabled = true;
-                playerCollider.enabled = true;
-            }
-            else
-            {
-                playerRenderer.enabled = false;
-                playerCollider.enabled = false;
-            }
             playerRigid.velocity = Vector3.zero;
-            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal);
-            playerRigid.velocity = parallelToGround * charge * (dashSpeed / DASH_DURATION);
+            parallelToGround = Vector3.Cross(Vector3.Cross(floorInfo.normal, transform.forward), floorInfo.normal).normalized;
+            playerRigid.velocity = parallelToGround * charge * (dashSpeed / dashDuration);
             currentDuration += Time.deltaTime;
             yield return null;
         }

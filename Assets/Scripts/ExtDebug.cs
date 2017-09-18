@@ -10,7 +10,7 @@ public class ExtDebug
     }
 
     //Draws the full box from start of cast to its end distance. Can also pass in hitInfoDistance instead of full distance
-    public static void DrawBoxCastBox(Vector3 origin, Vector3 halfExtents, Quaternion orientation, Vector3 direction, float distance, Color color)
+    public static void DrawBoxCastBox(Vector3 origin, Vector3 halfExtents, Vector3 direction, Quaternion orientation, float distance, Color color)
     {
         direction.Normalize();
         Box bottomBox = new Box(origin, halfExtents, orientation);
