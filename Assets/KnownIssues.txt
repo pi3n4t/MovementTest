@@ -1,3 +1,0 @@
-Sollte man schräg über eine Rampe dashen, dasht an auch nach Verlassen der Rampe weiter im Winkel der zuvor betretenen Rampe nach oben.
-Dies liegt daran, weil ich noch den Groundcheck dafür benutze. Dieser checkt nicht weit genug nach unten, um mögliche Untergrundänderungen festzustellen.
-Somit wird die MovementDirection auch nach verlassen der Rampe nicht geändert

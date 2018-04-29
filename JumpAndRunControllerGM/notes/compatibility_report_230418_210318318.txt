@@ -1,0 +1,31 @@
+Converting GML script: ${project_dir}\scripts\stateSelect\stateSelect.gml
+Converted description /// @description  @description Choose the current state of the current objects' state machine
+
+Converting GML script: ${project_dir}\scripts\stateMachineCreate\stateMachineCreate.gml
+Converted description /// @description @description Create a state machine for the current object
+
+Converting GML script: ${project_dir}\scripts\stateAdd\stateAdd.gml
+Converted description /// @description  @description Add a new state to the current objects' state machine
+
+Converting GML script: ${project_dir}\scripts\playerStateIdle\playerStateIdle.gml
+Converted description /// @description @description Idle state for player
+
+Converting GML script: ${project_dir}\scripts\playerStateRun\playerStateRun.gml
+Converted description /// @description @description Run state for player
+
+Converting GML script: ${project_dir}\scripts\playerStateJump\playerStateJump.gml
+Converted description /// @description @description Jump state for player
+
+Converting GML script: ${project_dir}\scripts\approach\approach.gml
+Converted description /// @description  Approach(a, b, amount)/// @param a
+/// @param  b
+/// @param  amount
+
+Converting GML script: ${project_dir}\scripts\move\move.gml
+Converted description /// @description  @description Movement
+
+Converting GML script: ${project_dir}\objects\oEntity\Create_0.gml
+Converted description /// @description Declare default variables
+
+Windows NSIS Installer Script has been set to default due to changes in GameMaker Studio 2
+Game speed set to 60
